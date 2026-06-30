@@ -1,0 +1,229 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id                         String            @id @default(cuid())
+  applicationReferenceNumber String            @unique
+  customerNumber             String            @unique
+  tinNumber                  String?            @unique
+  companyName               String?
+   annualRevenue             Float?
+  firstName                  String?
+  middleName                 String?
+  lastName                   String?
+  mothersName                String?
+  gender                     String?
+  maritalStatus              String?
+  dateOfBirth                DateTime?
+  nationalId                 String?
+  phone                      String
+  email                      String?
+  region                     String
+  zone                       String
+  city                       String
+  subcity                    String
+  woreda                     String
+  monthlyIncome              Float?
+  status                     String
+  accountType                String
+  nationalidUrl              String?
+  agreementFormUrl           String
+  majorLineBusiness          String
+  majorLineBusinessUrl       String
+  otherLineBusiness          String?
+  otherLineBusinessUrl       String?
+  dateOfEstablishmentMLB     DateTime
+  dateOfEstablishmentOLB     DateTime?
+  purposeOfLoan              String
+  loanType                   String
+  loanAmount                 Float
+  loanPeriod                 Int
+  modeOfRepayment            String
+  economicSector             String
+  customerSegmentation       String
+  creditInitiationCenter     String
+  applicationFormUrl         String
+  shareholdersDetailsUrl     String?
+  creditProfileUrl           String
+  transactionProfileUrl      String
+  collateralProfileUrl       String
+  financialProfileUrl        String
+  creditAnalystID            String?
+  supervisorID               String?
+  committeManagerID               String?
+  relationManagerID          String?
+  rmRecommendation           String?     
+  creditAnalystComment       String?
+  applicationStatus          ApplicationStatus @default(PENDING)
+  createdAt                  DateTime          @default(now())
+  updatedAt                  DateTime          @updatedAt
+
+  @@map("customers")
+  LoanAnalysis LoanAnalysis[]
+  Decision Decision[]
+  MembersDecision MembersDecision[]
+}
+
+enum ApplicationStatus {
+  PENDING 
+  UNDER_REVIEW 
+  APPROVED 
+  REJECTED 
+  ANALYSIS_COMPLETED
+  SUPERVISOR_REVIEWING
+  FINAL_ANALYSIS
+  SUPERVISED
+  COMMITTE_REVIEW
+  COMMITTE_REVERSED
+  RM_RECCOMENDATION
+  MEMBER_REVIEW
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  role          Userrole @default(RELATIONSHIP_MANAGER)
+  sessions      Session[]
+  accounts      Account[]
+
+  @@unique([email])
+  @@map("user")
+  MembersDecision MembersDecision[]
+ 
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+model LoanAnalysis {
+  id                   String            @id @default(cuid())
+  applicationReferenceNumber String            @unique @map("application_reference_number")
+
+
+  customer             Customer @relation(fields: [applicationReferenceNumber], references: [applicationReferenceNumber])
+ 
+  swotAnalysisUrl      String?          @map("swot_analysis_url")
+  pestelAnalysisUrl    String?          @map("pestel_analysis_url")
+  riskAssessmentUrl    String?          @map("risk_assessment_url")
+  esgAssessmentUrl     String?          @map("esg_assessment_url")
+  financialNeedUrl     String?          @map("financial_need_url")
+  analystConclusion    String?          @map("analyst_conclusion")
+  analystRecommendation String?          @map("analyst_recommendation")
+
+  pestelanalysisScore Int? 
+  swotanalysisScore Int? 
+   riskassesmentScore Int? 
+  esgassesmentScore Int? 
+  financialneedScore Int? 
+   overallScore Float?  
+  reviewNotes String? 
+
+}
+model Decision {
+  id          String   @id @default(cuid())
+  customerId  String
+  applicationReferenceNumber String            @unique @map("application_reference_number")
+
+
+  customer             Customer @relation(fields: [applicationReferenceNumber], references: [applicationReferenceNumber])
+  decision    String
+  decisionReason String?
+ 
+  responsibleUnitName      String?
+ 
+  responsibleUnitEmail  String?
+  responsibleUnitPhone  String?
+ 
+
+
+ 
+  decisionDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("decisions")
+}
+model MembersDecision {
+  id          String   @id @default(cuid())
+  userId  String 
+  responsibleUnitName      String?
+ 
+  responsibleUnitEmail  String?
+  responsibleUnitPhone  String?
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applicationReferenceNumber String      @map("application_reference_number")
+  customer             Customer @relation(fields: [applicationReferenceNumber], references: [applicationReferenceNumber])
+  decision    String
+  decisionReason String
+  decisionDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@map("memberdecisions")
+}
+
+
+enum Userrole {
+  ADMIN
+  RELATIONSHIP_MANAGER
+  CREDIT_ANALYST
+  SUPERVISOR
+  COMMITTE_MEMBER
+  APPROVAL_COMMITTE
+  COMMITTE_MANAGER
+  BANNED
+
+}
